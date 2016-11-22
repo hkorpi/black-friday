@@ -37,7 +37,6 @@
          (not= position (:position player))]}
   (let [path (g/search (tiles->map tiles) (position->vec (:position player)) (position->vec position))
         direction (vec (g/minus (second path) (first path)))]
-    (pprint path)
     (case direction
       [0 -1] "UP"
       [0 1] "DOWN"
@@ -49,8 +48,6 @@
         tiles (get-in gs [:gameState :map :tiles])
         player (:playerState gs)
         closest-item (find-closest player items)]
-    (pprint closest-item)
-    (pprint player)
     (cond
       (nil? closest-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
       (= (:position player) (:position closest-item)) "PICK"
@@ -61,7 +58,7 @@
 
 (defn move [gs]
   (let [move (time (make-move gs))]
-    (pprint move)
+    (pprint (str (get-in gs [:playerState :position]) " -> " move))
     move))
 
 (def app
@@ -71,7 +68,7 @@
       :spec "/swagger.json"
       :data {:info {:title "Black friday bot API"
                     :description ""}
-             :tags [{:name "api", :description "some apis"}]}}}
+             :tags [{:name "api", :description "Black friday bot API"}]}}}
 
     (POST "/move" []
           :return s/Str
