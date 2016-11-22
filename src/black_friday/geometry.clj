@@ -7,12 +7,6 @@
 (defn manhattan-distance [[x1 y1] [x2 y2]]
   (+ (Math/abs ^Integer (- x2 x1)) (Math/abs ^Integer (- y2 y1))))
 
-(defn cost [curr start end]
-  (let [g (manhattan-distance start curr)
-        h (manhattan-distance curr end)
-        f (+ g h)]
-    [f g h]))
-
 (defn edges [map width height closed [x y]]
   (for [tx (range (- x 1) (+ x 2))
         ty (range (- y 1) (+ y 2))
@@ -26,52 +20,53 @@
                    (some #{0} (minus [tx ty] [x y])))]
     [tx ty]))
 
-(defn path [end parent closed]
+(defn path [current came-from]
   (reverse
-    (loop [path [end parent]
-           node (closed parent)]
+    (loop [path []
+           node current]
       (if (nil? node)
         path
-        (recur (conj path node) (closed node))))))
+        (recur (conj path node) (came-from node))))))
+
+(defn- search-a*
+  ([map width height open closed came-from score end]
+   (if-let [[current _] (peek open)]
+     (if-not (= current end)
+       (let [closed (conj closed current)
+             neighbours (edges map width height closed current)
+             [_ g-score] (score current)
+             [open came-from score]
+             (reduce
+               (fn [[open came-from score] neighbour]
+                 (let [tentative-g-score (+ g-score (manhattan-distance current neighbour))
+                       neighbour-score (or (score neighbour) [Long/MAX_VALUE Long/MAX_VALUE])]
+                   (if (< tentative-g-score (second neighbour-score))
+                     (let [neighbour-f-score (+ tentative-g-score (manhattan-distance neighbour end))]
+                       [(assoc open neighbour neighbour-f-score)
+                        (assoc came-from neighbour current)
+                        (assoc score neighbour [neighbour-f-score tentative-g-score])])
+                     (let [open+ (if (not (contains? open neighbour))
+                                   (assoc open neighbour (first neighbour-score))
+                                   open)]
+                       [open+ came-from score]))))
+               [(pop open) came-from score] neighbours)]
+         (recur map width height open closed came-from score end))
+       (path current came-from)))))
 
 (defn search
   ([map start end]
    {:pre [(c/not-nil? map)
-          (c/not-nil? start)
-          (c/not-nil? end)]}
+          (vector? start)
+          (vector? end)]}
    (let [[sx sy] start
          [ex ey] end
-         open (pm/priority-map-by
-                (fn [x y]
-                  (if (= x y)
-                    0
-                    (let [[f1 _ h1] x
-                          [f2 _ h2] y]
-                      (if (= f1 f2)
-                        (if (< h1 h2) -1 1)
-                        (if (< f1 f2) -1 1)))))
-                start (cost start start end))
-         closed {}
+         f-score (manhattan-distance start end)
+         open (pm/priority-map start f-score)
+         closed #{}
+         came-from {}
+         score {start [f-score 0]}
          width (-> map first count dec)
          height (-> map count dec)]
      (when (and (not= (nth (nth map sy) sx) 1)
                 (not= (nth (nth map ey) ex) 1))
-       (search map width height open closed start end))))
-
-  ([map width height open closed start end]
-   (if-let [[coord [_ _ _ parent]] (peek open)]
-     (if-not (= coord end)
-       (let [closed (assoc closed coord parent)
-             edges (edges map width height closed coord)
-             open (reduce
-                    (fn [open edge]
-                      (if (not (contains? open edge))
-                        (assoc open edge (conj (cost edge start end) coord))
-                        (let [[_ pg] (open edge)
-                              [nf ng nh] (cost edge start end)]
-                          (if (< ng pg)
-                            (assoc open edge (conj [nf ng nh] coord))
-                            open))))
-                    (pop open) edges)]
-         (recur map width height open closed start end))
-       (path end parent closed)))))
+       (search-a* map width height open closed came-from score end)))))
