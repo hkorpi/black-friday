@@ -27,6 +27,9 @@
   (let [items-distances (map (partial distance-to-item player) items)]
     (first (filter (partial can-afford? player) (sort-by :distance items-distances)))))
 
+(defn find-cheapest-item [player items]
+  (first (sort-by :discountPercent #(compare %2 %1) (filter (partial can-afford? player) items))))
+
 (defn tiles->map [tiles]
   (map (fn [row] (map (fn [tile] (if (#{\_ \o} tile ) 0 1)) row)) tiles))
 
@@ -47,11 +50,11 @@
   (let [items (get-in gs [:gameState :items])
         tiles (get-in gs [:gameState :map :tiles])
         player (:playerState gs)
-        closest-item (find-closest player items)]
+        target-item (find-cheapest-item player items)]
     (cond
-      (nil? closest-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
-      (= (:position player) (:position closest-item)) "PICK"
-      :else (goto-position tiles player (:position closest-item)))))
+      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
+      (= (:position player) (:position target-item)) "PICK"
+      :else (goto-position tiles player (:position target-item)))))
 
 (defn make-move-random [gs]
   (first (shuffle ["LEFT" "RIGHT" "UP" "DOWN"])))
