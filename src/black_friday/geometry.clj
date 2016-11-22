@@ -54,19 +54,19 @@
        (path current came-from)))))
 
 (defn search
-  ([map start end]
-   {:pre [(c/not-nil? map)
-          (vector? start)
-          (vector? end)]}
-   (let [[sx sy] start
-         [ex ey] end
-         f-score (manhattan-distance start end)
-         open (pm/priority-map start f-score)
-         closed #{}
-         came-from {}
-         score {start [f-score 0]}
-         width (-> map first count dec)
-         height (-> map count dec)]
-     (when (and (not= (nth (nth map sy) sx) 1)
-                (not= (nth (nth map ey) ex) 1))
-       (search-a* map width height open closed came-from score end)))))
+  [map start end]
+  {:pre [(c/not-nil? map)
+         (vector? start)
+         (vector? end)]}
+  (let [[sx sy] start
+        [ex ey] end
+        f-score (manhattan-distance start end)
+        open (pm/priority-map start f-score)
+        closed #{}
+        came-from {}
+        score {start [f-score 0]}
+        width (-> map first count dec)
+        height (-> map count dec)]
+    (when (and (not= (nth (nth map sy) sx) 1)
+               (not= (nth (nth map ey) ex) 1))
+      (search-a* map width height open closed came-from score end))))
