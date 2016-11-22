@@ -1,0 +1,18 @@
+*.class
+*.log
+
+# Vagrantin tila
+.vagrant
+
+# IntelliJ IDEA
+*.iml
+.idea
+
+# clojure
+.lein-env
+.lein-failures
+.lein-repl-history
+.nrepl-port
+
+# target-kansio
+target
