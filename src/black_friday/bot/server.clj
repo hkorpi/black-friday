@@ -30,9 +30,20 @@
 
 (c/setup-shutdown-hook! stop)
 
-(defn register [port]
-  (client/post "http://192.168.50.100:8080/register"
-               {:form-params  {:playerName "Roberto"
-                               :url (str "http://192.168.50.1:" port "/move")}
+(def settings {
+   :bot {
+      :host (or (System/getProperty "bot.host") "192.168.50.1")
+      :port (Long/parseLong (or (System/getProperty "bot.port") "8080"))}
+   :server (or (System/getProperty "server") "192.168.50.100:8080")})
+
+
+(defn register [move-path player-name]
+  (client/post (str "http://" (:server settings) "/register")
+               {:form-params  {:playerName player-name
+                               :url (str "http://" (get-in settings [:bot :host]) ":"
+                                         (get-in settings [:bot :port]) move-path)}
                 :content-type :json
                 :as           :json}))
+
+(defn start []
+  (register "/move" "Roberto"))
