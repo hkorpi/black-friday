@@ -45,6 +45,8 @@
    The resulting predicate g is g(x) = f1(x) and f2(x) and ... and fn(x)."
   [& predicates] (fn [obj] (every? identity (map (fn [f] (f obj)) predicates))))
 
+(defn not* [predicate] (fn [value] (not (predicate value))))
+
 (defn map->and
   [map]
   (cons `and* (for [[k v] map] `(eq ~k ~v))))

