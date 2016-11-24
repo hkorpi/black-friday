@@ -10,7 +10,8 @@
             [black-friday.bot.settings :as settings]
             [black-friday.bot.dos :as dos]
             [common.core :as c]
-            [common.predicate :as p]))
+            [common.predicate :as p]
+            [common.string :as xstr]))
 
 (defn position->vec [position]
   [(:x position) (:y position)])
@@ -91,7 +92,7 @@
 
     (cond
       (not-empty (:usableItems player))
-        (if (= (:url target-player) (str (settings/bot-url) + "/move"))
+        (if (xstr/substring? (settings/bot-url) (:url target-player))
           (goto-position tiles player (:position target-player))
           "USE")
       (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))

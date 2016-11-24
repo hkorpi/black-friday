@@ -6,7 +6,35 @@
 
 (def ^:private targets (agent {:active #{} :removed #{}}))
 
-(def attack-request {})
+(def attack-request {:reason "dos",
+                     :gameState
+                             {:map
+                                 {:width 3,
+                                  :height 3,
+                                  :maxItemCount 0,
+                                  :name "HAL Institute for Criminally Insane Robots",
+                                  :tiles
+                                  ["xxx"
+                                   "x_x"
+                                   "xxx"],
+                                  :exit {:x 1, :y 1}},
+                              :players []
+                              :finishedPlayers []
+                              :items []
+                              :round 0
+                              :shootingLines []}
+                     :playerState
+                             {:money 0
+                              :name "Bender Bending Rodriguez"
+                              :usableItems []
+                              :state "WASTED",
+                              :timeInState 0
+                              :score 0
+                              :url nil
+                              :health 0
+                              :position {:x 1, :y 1}
+                              :actionCount 0}
+                     :playerId "Insane in the main frame"})
 
 (defn- attack [url]
   (try
