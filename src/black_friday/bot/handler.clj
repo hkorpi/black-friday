@@ -88,9 +88,6 @@
         target-item (find-closest-usable-item player items (:position @target))
         target-player (find-weapon-target player (get-in gs [:gameState :players]))]
 
-    (pprint @target)
-    (pprint target-item)
-
     (cond
       (not-empty (:usableItems player))
         (if (= (:name target-player) "Roberto")
