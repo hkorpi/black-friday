@@ -10,25 +10,31 @@
             [clojure.pprint :refer [pprint]]
             [black-friday.geometry :as g]
             [black-friday.schema :as sc]
-            [common.core :as c]))
+            [common.core :as c]
+            [common.predicate :as p]))
 
 (defn position->vec [position]
   [(:x position) (:y position)])
 
-(defn distance-to-item [player item]
-  (let [start (:position player)
-        end   (:position item)]
-    (assoc item :distance (g/manhattan-distance (position->vec start) (position->vec end)))))
+(defn distance [x y]
+  (g/manhattan-distance (position->vec (:position x)) (position->vec (:position y))))
 
 (defn can-afford? [player item]
   (>= (:money player) (* (/ (- 100 (:discountPercent item)) 100) (:price item))))
 
-(defn find-closest [player items]
-  (let [items-distances (map (partial distance-to-item player) items)]
-    (first (filter (partial can-afford? player) (sort-by :distance items-distances)))))
+(def descending-sort #(compare %2 %1))
+
+(def ascending-sort compare)
+
+(defn vec-comparator [& comparators]
+  (fn [a b]
+    (or (c/find-first #(not= % 0) (map eval (map list comparators a b))) 0)))
 
 (defn find-cheapest-item [player items]
-  (first (sort-by :discountPercent #(compare %2 %1) (filter (partial can-afford? player) items))))
+  (first (sort-by :discountPercent descending-sort (filter (partial can-afford? player) items))))
+
+(defn find-weapon-target [player players]
+  (first (sort-by (partial distance player) descending-sort players)))
 
 (defn tiles->map [tiles]
   (map (fn [row] (map (fn [tile] (if (#{\_ \o} tile ) 0 1)) row)) tiles))
@@ -46,23 +52,53 @@
       [-1 0] "LEFT"
       [1 0] "RIGHT")))
 
-(defn make-move [gs]
+(def target (atom nil))
+
+(defn move [gs]
   (let [items (get-in gs [:gameState :items])
         tiles (get-in gs [:gameState :map :tiles])
         player (:playerState gs)
         target-item (find-cheapest-item player items)]
+
+    (reset! target target-item)
     (cond
       (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
       (= (:position player) (:position target-item)) "PICK"
       :else (goto-position tiles player (:position target-item)))))
 
-(defn make-move-random [gs]
-  (first (shuffle ["LEFT" "RIGHT" "UP" "DOWN"])))
-
-(defn move [gs]
-  (let [move (time (make-move gs))]
+(defn move+log [gs]
+  (let [move (time (move gs))]
     (pprint (str (get-in gs [:playerState :position]) " -> " move))
     move))
+
+(defn random-move [gs]
+  (first (shuffle ["LEFT" "RIGHT" "UP" "DOWN"])))
+
+(defn find-closest-usable-item [player items not-in-position]
+  (first (sort-by (juxt :isUsable (partial distance player) :discountPercent)
+                  (vec-comparator descending-sort ascending-sort descending-sort)
+                  (filter (p/and* (partial can-afford? player)
+                                  (p/not-eq :position not-in-position))
+                          items))))
+
+(defn minion-move [gs]
+  (let [items (get-in gs [:gameState :items])
+        tiles (get-in gs [:gameState :map :tiles])
+        player (:playerState gs)
+        target-item (find-closest-usable-item player items (:position @target))
+        target-player (find-weapon-target player (get-in gs [:gameState :players]))]
+
+    (pprint @target)
+    (pprint target-item)
+
+    (cond
+      (not-empty (:usableItems player))
+        (if (= (:name target-player) "Roberto")
+          (goto-position tiles player (:position target-player))
+          "USE")
+      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
+      (= (:position player) (:position target-item)) "PICK"
+      :else (goto-position tiles player (:position target-item)))))
 
 (def app
   (api
@@ -74,8 +110,20 @@
              :tags [{:name "api", :description "Black friday bot API"}]}}}
 
     (POST "/move" []
-          :return s/Str
-          :body [state sc/Game-State-Changed]
-          :summary ""
-          (ok (move state)))))
+      :return s/Str
+      :body [state sc/Game-State-Changed]
+      :summary ""
+      (ok (move+log state)))
+
+    (POST "/move/random" []
+      :return s/Str
+      :body [state sc/Game-State-Changed]
+      :summary ""
+      (ok (random-move state)))
+
+    (POST "/move/minion" []
+      :return s/Str
+      :body [state sc/Game-State-Changed]
+      :summary ""
+      (ok (minion-move state)))))
 

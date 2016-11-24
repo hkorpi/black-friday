@@ -46,4 +46,6 @@
                 :as           :json}))
 
 (defn start []
-  (register "/move" "Roberto"))
+  (register "/move" "Roberto")
+  (register "/move/minion" "Minion-1")
+  (register "/move/random" "Walker"))
