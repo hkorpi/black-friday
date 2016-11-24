@@ -38,8 +38,12 @@
                 :content-type :json
                 :as           :json}))
 
-(defn start []
+(defn register-bots []
   (let [response (register "/move" "Roberto")]
     (when (s/minions?)
       (doseq [i (range 1 (inc (-> response :body :gameState :map :maxItemCount)))]
         (register "/move/minion" (str "Minion-" i))))))
+
+(defn -main []
+  (start-server (-> s/settings :bot :port))
+  (register-bots))

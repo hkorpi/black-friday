@@ -5,7 +5,7 @@
  :bot {
        :host (or (System/getProperty "bot.host") "192.168.50.1")
        :port (Long/parseLong (or (System/getProperty "bot.port") "8080"))
-       :mode (or (System/getProperty "bot.mode") "dos")}
+       :mode (or (System/getProperty "bot.mode") "gray")}
  :server (or (System/getProperty "server") "192.168.50.100:8080")})
 
 (defn bot-url []
