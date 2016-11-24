@@ -40,6 +40,6 @@
 
 (defn start []
   (let [response (register "/move" "Roberto")]
-    (doseq [i (range 1 (inc (-> response :body :gameState :map :maxItemCount)))]
-      (register "/move/minion" (str "Minion-" i))))
-  (register "/move/random" "Walker"))
+    (when (s/minions?)
+      (doseq [i (range 1 (inc (-> response :body :gameState :map :maxItemCount)))]
+        (register "/move/minion" (str "Minion-" i))))))
