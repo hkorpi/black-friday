@@ -2,14 +2,13 @@
   (:require [compojure.api.sweet :refer :all]
             [ring.util.http-response :refer :all]
             [schema.core :as s]
-            [org.httpkit.server :as hs]
             [ring.middleware.params :refer (wrap-params)]
             [ring.middleware.keyword-params :refer (wrap-keyword-params)]
-            [ring.middleware.logger :as logger]
-            [cheshire.core :as json]
             [clojure.pprint :refer [pprint]]
             [black-friday.geometry :as g]
             [black-friday.schema :as sc]
+            [black-friday.bot.settings :as settings]
+            [black-friday.bot.dos :as dos]
             [common.core :as c]
             [common.predicate :as p]))
 
@@ -60,7 +59,9 @@
         player (:playerState gs)
         target-item (find-cheapest-item player items)]
 
+    (dos/update-dos-targets (map :url (get-in gs [:gameState :players])))
     (reset! target target-item)
+
     (cond
       (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
       (= (:position player) (:position target-item)) "PICK"
@@ -90,7 +91,7 @@
 
     (cond
       (not-empty (:usableItems player))
-        (if (= (:name target-player) "Roberto")
+        (if (= (:url target-player) (str (settings/bot-url) + "/move"))
           (goto-position tiles player (:position target-player))
           "USE")
       (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))

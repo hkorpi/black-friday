@@ -4,7 +4,8 @@
             [common.core :as c]
             [clj-http.client :as client]
             [black-friday.bot.handler :as handler]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [black-friday.bot.settings :as s]))
 
 ;;
 ;; HTTP-kit server life-cycle:
@@ -30,18 +31,10 @@
 
 (c/setup-shutdown-hook! stop)
 
-(def settings {
-   :bot {
-      :host (or (System/getProperty "bot.host") "192.168.50.1")
-      :port (Long/parseLong (or (System/getProperty "bot.port") "8080"))}
-   :server (or (System/getProperty "server") "192.168.50.100:8080")})
-
-
 (defn register [move-path player-name]
-  (client/post (str "http://" (:server settings) "/register")
+  (client/post (str "http://" (:server s/settings) "/register")
                {:form-params  {:playerName player-name
-                               :url (str "http://" (get-in settings [:bot :host]) ":"
-                                         (get-in settings [:bot :port]) move-path)}
+                               :url (str "http://" (s/bot-url) move-path)}
                 :content-type :json
                 :as           :json}))
 
