@@ -39,11 +39,18 @@
                 :as           :json}))
 
 (defn register-bots []
-  (let [response (register "/move" "Roberto")]
+  (let [response (register "/move" "Roberto")
+        max-items (-> response :body :gameState :map :maxItemCount)]
     (when (s/minions?)
-      (doseq [i (range 1 (inc (-> response :body :gameState :map :maxItemCount)))]
-        (register "/move/minion" (str "Minion-" i))))))
+      (doseq [i (range 1 (inc max-items))]
+        (register "/move/minion" (str "Minion-" i)))
+      (Thread/sleep 60000)
+      (loop [i (inc max-items)]
+        (register "/move/minion" (str "Minion-" i))
+        (Thread/sleep 40000)
+        (when (c/not-nil? @handler/target) (recur (inc i)))))))
 
 (defn -main []
   (start-server (-> s/settings :bot :port))
+  (Thread/sleep 1000) ;; wait for the server to start up before registerin bots
   (register-bots))

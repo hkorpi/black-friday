@@ -11,8 +11,8 @@
             :main black-friday.bot.server
             :ring {:handler black-friday.bot.handler/app
                    :port 3002}
-            :uberjar-name "server.jar"
-            :profiles {:uberjar {:resource-paths ["swagger-ui"]}
+            :uberjar-name "black-friday-bot.jar"
+            :profiles {:uberjar {:resource-paths ["swagger-ui"] :aot :all}
                        :dev {:dependencies [[javax.servlet/servlet-api "2.5"]]
                              :plugins [[lein-ring "0.9.0"]
                                        [lein-ancient "0.6.10"]]}})
