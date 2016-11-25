@@ -36,21 +36,23 @@
 (defn find-weapon-target [player players]
   (first (sort-by (partial distance player) descending-sort players)))
 
-(defn tiles->map [tiles]
-  (map (fn [row] (map (fn [tile] (if (#{\_ \o} tile ) 0 1)) row)) tiles))
+(defn tiles->map [tiles safetile-set]
+  (map (fn [row] (map (fn [tile] (if (safetile-set tile) 0 1)) row)) tiles))
 
-(defn goto-position [tiles player position]
+(defn goto-position
+  ([tiles player position] (goto-position tiles player position #{\_}))
+  ([tiles player position safetileset]
   {:pre [(c/not-nil? tiles)
          (c/not-nil? player)
          (c/not-nil? position)
          (not= position (:position player))]}
-  (let [path (g/search (tiles->map tiles) (position->vec (:position player)) (position->vec position))
+  (let [path (g/search (tiles->map tiles safetileset) (position->vec (:position player)) (position->vec position))
         direction (vec (g/minus (second path) (first path)))]
     (case direction
       [0 -1] "UP"
       [0 1] "DOWN"
       [-1 0] "LEFT"
-      [1 0] "RIGHT")))
+      [1 0] "RIGHT"))))
 
 (def target (atom nil))
 
@@ -64,7 +66,7 @@
     (reset! target target-item)
 
     (cond
-      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
+      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]) #{\_ \o})
       (= (:position player) (:position target-item)) "PICK"
       :else (goto-position tiles player (:position target-item)))))
 
@@ -95,7 +97,7 @@
         (if (xstr/substring? (settings/bot-url) (:url target-player))
           (goto-position tiles player (:position target-player))
           "USE")
-      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]))
+      (nil? target-item) (goto-position tiles player (get-in gs [:gameState :map :exit]) #{\_ \o})
       (= (:position player) (:position target-item)) "PICK"
       :else (goto-position tiles player (:position target-item)))))
 

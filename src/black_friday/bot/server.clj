@@ -39,7 +39,7 @@
                 :as           :json}))
 
 (defn register-bots []
-  (let [response (register "/move" "Roberto")
+  (let [response (register "/move" "mika")
         max-items (-> response :body :gameState :map :maxItemCount)]
     (when (s/minions?)
       (doseq [i (range 1 (inc max-items))]
