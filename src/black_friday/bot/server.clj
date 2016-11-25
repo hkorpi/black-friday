@@ -44,11 +44,12 @@
     (when (s/minions?)
       (doseq [i (range 1 (inc max-items))]
         (register "/move/minion" (str "Minion-" i)))
-      (Thread/sleep 60000)
-      (loop [i (inc max-items)]
-        (register "/move/minion" (str "Minion-" i))
-        (Thread/sleep 40000)
-        (when (c/not-nil? @handler/target) (recur (inc i)))))))
+      (future
+        (Thread/sleep 60000)
+        (loop [i (inc max-items)]
+          (register "/move/minion" (str "Minion-" i))
+          (Thread/sleep 40000)
+          (when (c/not-nil? @handler/target) (recur (inc i))))))))
 
 (defn -main []
   (start-server (-> s/settings :bot :port))

